@@ -7,6 +7,7 @@ import guru.springframework.converters.UnitOfMeasureCommandToUnitOfMeasure;
 import guru.springframework.converters.UnitOfMeasureToUnitOfMeasureCommand;
 import guru.springframework.domain.Ingredient;
 import guru.springframework.domain.Recipe;
+import guru.springframework.repositories.IngredientRepository;
 import guru.springframework.repositories.RecipeRepository;
 import guru.springframework.repositories.UnitOfMeasureRepository;
 import org.junit.Assert;
@@ -18,6 +19,12 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.Optional;
 
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 public class IngredientServiceImplTest {
 
     private final IngredientToIngredientCommand ingredientToIngredientCommand;
@@ -25,6 +32,9 @@ public class IngredientServiceImplTest {
 
     @Mock
     private RecipeRepository recipeRepository;
+
+    @Mock
+    IngredientRepository ingredientRepository;
 
     @Mock
     private UnitOfMeasureRepository unitOfMeasureRepository;
@@ -39,7 +49,7 @@ public class IngredientServiceImplTest {
     @Before
     public void setUp() throws Exception{
         MockitoAnnotations.initMocks(this);
-        ingredientService = new IngredientServiceImpl(ingredientToIngredientCommand, ingredientCommandToIngredient, recipeRepository, unitOfMeasureRepository);
+        ingredientService = new IngredientServiceImpl(ingredientToIngredientCommand, ingredientCommandToIngredient, recipeRepository, unitOfMeasureRepository, ingredientRepository);
     }
 
     @Test
@@ -69,13 +79,13 @@ public class IngredientServiceImplTest {
         Optional<Recipe> recipeOptional = Optional.of(recipe);
 
         //when
-        Mockito.when(recipeRepository.findById(Mockito.anyLong())).thenReturn(recipeOptional);
+        Mockito.when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
 
         //then
         IngredientCommand ingredientCommand = ingredientService.findByRecipeIdAndIngredientId(1L, 3L);
         Assert.assertEquals(Long.valueOf(3L), ingredientCommand.getId());
         Assert.assertEquals(Long.valueOf(1L), ingredientCommand.getRecipeId());
-        Mockito.verify(recipeRepository, Mockito.times(1)).findById(Mockito.anyLong());
+        verify(recipeRepository, times(1)).findById(anyLong());
     }
 
     @Test
@@ -91,7 +101,7 @@ public class IngredientServiceImplTest {
         savedRecipe.addIngredient(new Ingredient());
         savedRecipe.getIngredients().iterator().next().setId(3L);
 
-        Mockito.when(recipeRepository.findById(Mockito.anyLong())).thenReturn(recipeOptional);
+        Mockito.when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
         Mockito.when(recipeRepository.save(Mockito.any())).thenReturn(savedRecipe);
 
         //when
@@ -99,7 +109,27 @@ public class IngredientServiceImplTest {
 
         //then
         Assert.assertEquals(Long.valueOf(3L), savedCommand.getId());
-        Mockito.verify(recipeRepository, Mockito.times(1)).findById(Mockito.anyLong());
+        verify(recipeRepository, times(1)).findById(anyLong());
 
+    }
+
+    @Test
+    public void testDeleteById() throws Exception{
+        //given
+        Recipe recipe = new Recipe();
+        Ingredient ingredient = new Ingredient();
+        ingredient.setId(3L);
+        recipe.addIngredient(ingredient);
+        ingredient.setRecipe(recipe);
+        Optional<Recipe> recipeOptional = Optional.of(recipe);
+
+        when(recipeRepository.findById(anyLong())).thenReturn(recipeOptional);
+
+        //when
+        ingredientService.deleteById(1L, 3L);
+
+        //then
+        verify(recipeRepository, times(1)).findById(anyLong());
+        verify(recipeRepository, times(1)).save(any(Recipe.class));
     }
 }
