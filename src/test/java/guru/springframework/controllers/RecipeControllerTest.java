@@ -2,13 +2,10 @@ package guru.springframework.controllers;
 
 import guru.springframework.commands.RecipeCommand;
 import guru.springframework.domain.Recipe;
-import guru.springframework.exceptions.BadRequestException;
 import guru.springframework.exceptions.NotFoundException;
 import guru.springframework.services.RecipeService;
-import org.hamcrest.CoreMatchers;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
@@ -37,7 +34,9 @@ public class RecipeControllerTest {
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
         controller = new RecipeController(recipeService);
-        mockMvc = MockMvcBuilders.standaloneSetup(controller).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(controller)
+                .setControllerAdvice(ControllerExceptionHandler.class)
+                .build();
     }
 
     @Test
@@ -75,8 +74,8 @@ public class RecipeControllerTest {
         mockMvc.perform(post("/recipe")
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .param("id", "")
-                .param("description", "some string"))
-
+                .param("description", "some string")
+        .param("directions", "some directions"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(view().name("redirect:/recipe/2/show"));
     }
